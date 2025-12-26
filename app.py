@@ -8,32 +8,35 @@ app = FastAPI()
 PORT = int(os.environ.get("PORT", 8000))
 PIPER_BINARY = "/app/piper/piper"
 
-# Updated Model Paths
+# Model Paths (Rohan for Hindi, Lessac for English)
 MODELS = {
-    "en": "/app/model_en.onnx",      # English
-    "hi": "/app/model_rohan.onnx"    # Hindi (Rohan Updated)
+    "en": "/app/model_en.onnx",
+    "hi": "/app/model_rohan.onnx"
 }
 
 def is_hindi(text):
-    """Hindi characters detect karne ke liye"""
     return bool(re.search(r'[\u0900-\u097F]', text))
+
+# --- NEW: Home Page Route (Fix for 404 Error) ---
+@app.get("/")
+def home():
+    return {"status": "Online", "message": "Piper TTS API is running. Use POST /tts endpoint."}
 
 @app.post("/tts")
 async def generate_speech(request: Request):
     try:
         data = await request.json()
         
-        # Text fetch karein
         text = data.get("text") or data.get("input") or data.get("message") or data.get("content")
         
         if not text:
             print("LOG: No text found")
             return {"error": "No text provided"}
 
-        # --- Smart Language Selection ---
+        # Smart Language Selection
         if is_hindi(text):
             print(f"LOG: Hindi (Rohan) Detected -> {text[:15]}...")
-            model_path = MODELS["hi"]  # Ab Rohan model use hoga
+            model_path = MODELS["hi"]
         else:
             print(f"LOG: English Detected -> {text[:15]}...")
             model_path = MODELS["en"]
